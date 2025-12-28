@@ -49,6 +49,8 @@ spec:
           mountPath: /config
         - name: downloads
           mountPath: /data
+        - name: temp-run
+          mountPath: /run  # <--- NUEVO: Soluciona el error de s6-overlay
         resources:
           limits:
             memory: "1Gi"
@@ -60,6 +62,8 @@ spec:
       - name: downloads
         persistentVolumeClaim:
           claimName: qbit-downloads
+      - name: temp-run     # <--- NUEVO: Disco temporal en RAM/Disco
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
