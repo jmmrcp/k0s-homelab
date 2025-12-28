@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prowlarr-config
+  namespace: downloads
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: downloads
+  labels:
+    app: prowlarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      # --- SEGURIDAD POD ---
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+
+      containers:
+      - name: prowlarr
+        image: lscr.io/linuxserver/prowlarr:latest
+        
+        # --- SEGURIDAD CONTENEDOR ---
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+
+        # --- ENTORNO ---
+        envFrom:
+        - configMapRef:
+            name: common-env # Carga PUID, PGID y TZ
+
+        # --- PUERTOS ---
+        ports:
+        - containerPort: 9696
+          name: http
+
+        # --- CONTROL DE SALUD ---
+        livenessProbe:
+          tcpSocket:
+            port: 9696
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 9696
+          initialDelaySeconds: 15
+          periodSeconds: 10
+
+        # --- RECURSOS ---
+        # Prowlarr es muy ligero, no necesita tanta RAM como Sonarr
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # --- DISCOS ---
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        # Aunque Prowlarr no suele mover archivos, lo montamos por consistencia
+        # y por si usas "Blackhole" como cliente de descarga.
+        - name: media
+          mountPath: /data 
+          
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: prowlarr-config
+      - name: media
+        persistentVolumeClaim:
+          claimName: qbit-downloads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr-lb # Mantenemos sufijo -lb para consistencia con Ingress
+  namespace: downloads
+spec:
+  type: ClusterIP # Solo accesible internamente
+  selector:
+    app: prowlarr
+  ports:
+    - port: 80
+      targetPort: 9696
+      protocol: TCP

@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  namespace: downloads
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: downloads
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # CRUCIAL para evitar bloqueo de GPU
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: jellyfin
+        image: jellyfin/jellyfin:latest
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "4Gi"
+            gpu.intel.com/i915: 1 # Plugin Intel
+        volumeMounts:
+        - name: media
+          mountPath: /data
+        - name: config
+          mountPath: /config
+        ports:
+        - containerPort: 8096
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: qbit-downloads
+      - name: config
+        persistentVolumeClaim:
+          claimName: jellyfin-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin-lb
+  namespace: downloads
+spec:
+  type: ClusterIP # Todo interno, acceso por Ingress/Tailscale
+  selector:
+    app: jellyfin
+  ports:
+    - port: 80
+      targetPort: 8096

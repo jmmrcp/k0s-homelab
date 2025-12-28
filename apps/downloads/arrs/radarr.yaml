@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-config
+  namespace: downloads
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: downloads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: radarr
+        image: linuxserver/radarr:latest
+        envFrom:
+        - configMapRef:
+            name: common-env
+        ports:
+        - containerPort: 7878
+        livenessProbe:
+          tcpSocket:
+            port: 7878
+          initialDelaySeconds: 30
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: downloads
+          mountPath: /data # IMPORTANTE: /data para hardlinks
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: radarr-config
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: qbit-downloads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr-lb
+  namespace: downloads
+spec:
+  type: ClusterIP
+  selector:
+    app: radarr
+  ports:
+    - port: 80
+      targetPort: 7878

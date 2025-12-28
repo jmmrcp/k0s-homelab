@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaresolverr
+  namespace: downloads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flaresolverr
+  template:
+    metadata:
+      labels:
+        app: flaresolverr
+    spec:
+      containers:
+      - name: flaresolverr
+        image: flaresolverr/flaresolverr:latest
+        envFrom:
+        - configMapRef:
+            name: common-env
+        resources:
+          limits:
+            memory: "512Mi" # Evita OOM Kills

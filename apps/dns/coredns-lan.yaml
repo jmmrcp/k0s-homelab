@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns-lan
+  namespace: dns
+  labels:
+    app: coredns-lan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredns-lan
+  template:
+    metadata:
+      labels:
+        app: coredns-lan
+    spec:
+      containers:
+      - name: coredns
+        image: coredns/coredns:latest
+        args: [ "-conf", "/etc/coredns/Corefile" ]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/coredns
+          readOnly: true
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+      volumes:
+      - name: config-volume
+        configMap:
+          name: coredns-lan-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-lan-lb
+  namespace: dns
+spec:
+  selector:
+    app: coredns-lan
+  type: LoadBalancer
+  ports:
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53

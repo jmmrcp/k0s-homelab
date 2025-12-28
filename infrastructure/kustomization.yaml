@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - controllers/metallb-install.yaml
+  - controllers/ingress-nginx.yaml # (Descarga el yaml oficial o pon el link remoto)
+  - controllers/cert-manager.yaml  # (Descarga el yaml oficial)
+  - controllers/sealed-secrets.yaml # (Descarga el yaml oficial)
+  - controllers/self-signed-issuers.yaml
+  - network/metallb-config.yaml
+  - network/cloudflare-tunnel.yaml
+  - storage/pv-manual-media.yaml
+  - hardware/intel-gpu.yaml

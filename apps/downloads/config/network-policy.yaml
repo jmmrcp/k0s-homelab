@@ -1,0 +1,125 @@
+# 1. POLÍTICA BASE: DENEGAR TODO (Default Deny)
+# Nadie entra, nadie sale (salvo DNS y lo permitido explícitamente)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: downloads
+spec:
+  podSelector: {} # Aplica a todos los pods
+  policyTypes:
+  - Ingress
+---
+# 2. ACCESO EXTERNO (Ingress, Cloudflare y Monitorización)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-access
+  namespace: downloads
+spec:
+  podSelector: {} # Permitimos que entren a cualquier pod si vienen de fuentes fiables
+  policyTypes:
+  - Ingress
+  ingress:
+  # Permitir tráfico desde el Ingress Controller (Tu acceso .lan / HTTPS)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 8096
+    - protocol: TCP
+      port: 5055
+    - protocol: TCP
+      port: 7878
+    - protocol: TCP
+      port: 8989
+    - protocol: TCP
+      port: 8686
+    - protocol: TCP
+      port: 8787
+    - protocol: TCP
+      port: 9696
+    - protocol: TCP
+      port: 6767
+
+  # Permitir tráfico desde Cloudflare Tunnel (Tu acceso externo .com)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: cloudflare
+      podSelector:
+        matchLabels:
+          app: cloudflared
+
+  # Permitir tráfico desde el sistema de monitorización (Metrics Server)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+---
+# 3. TRÁFICO LATERAL (Conexiones entre aplicaciones)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-app
+  namespace: downloads
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  
+  # A. Permitir entrar a qBittorrent (desde los Arrs)
+  - from:
+    - podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: [radarr, sonarr, lidarr, readarr, prowlarr, jellyseerr]
+    ports:
+    - protocol: TCP
+      port: 8080 # Puerto de qBittorrent
+
+  # B. Permitir entrar a FlareSolverr (desde Prowlarr)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: prowlarr
+    ports:
+    - protocol: TCP
+      port: 8191 # Puerto de FlareSolverr
+
+  # C. Permitir entrar a los Arrs (desde Jellyseerr, Bazarr y Prowlarr)
+  # Radarr, Sonarr, Lidarr, Readarr reciben órdenes
+  - from:
+    - podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: [jellyseerr, bazarr, prowlarr]
+    ports:
+    - protocol: TCP
+      port: 7878 # Radarr
+    - protocol: TCP
+      port: 8989 # Sonarr
+    - protocol: TCP
+      port: 8686 # Lidarr
+    - protocol: TCP
+      port: 8787 # Readarr
+    - protocol: TCP
+      port: 9696 # Prowlarr
+
+  # D. Permitir entrar a Jellyfin (desde Jellyseerr y Kodi Sync si usaras)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: jellyseerr
+    ports:
+    - protocol: TCP
+      port: 8096 # Jellyfin

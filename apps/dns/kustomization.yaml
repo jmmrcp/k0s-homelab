@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: dns # Fuerza a que todo lo de aquí vaya al namespace 'dns'
+resources:
+  - namespace.yaml
+  - coredns-config.yaml # Tu ConfigMap con los dominios .lan
+  - coredns-lan.yaml    # El Deployment y Service del DNS ligero

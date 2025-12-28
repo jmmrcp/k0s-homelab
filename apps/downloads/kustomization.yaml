@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: downloads # Fuerza namespace 'downloads' para todo lo listado abajo
+
+resources:
+  # 1. Base del Namespace
+  - namespace.yaml
+  
+  # 2. Configuraciones Globales
+  - configs/common-env.yaml      # PUID, PGID, TZ
+  - configs/network-policy.yaml  # Firewall interno
+  
+  # 3. Servidores Multimedia
+  - media-server/jellyfin.yaml
+  - media-server/jellyseerr.yaml
+  - media-server/filebrowser.yaml
+  
+  # 4. Gestores de Descarga
+  - downloaders/qbittorrent.yaml
+  - downloaders/flaresolverr.yaml
+  
+  # 5. Stack Arr (Automatización)
+  - arrs/radarr.yaml
+  - arrs/sonarr.yaml
+  - arrs/lidarr.yaml
+  - arrs/prowlarr.yaml
+  - arrs/bazarr.yaml
+  # - arrs/readarr.yaml (Si decides añadir libros también)
