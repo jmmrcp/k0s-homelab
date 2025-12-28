@@ -26,15 +26,13 @@ spec:
       labels:
         app: bazarr
     spec:
+# --- BLOQUE DE SEGURIDAD CORREGIDO ---
       securityContext:
-        fsGroup: 1000        # <--- Esto hace que los volúmenes sean escribibles por el usuario 1000
-        runAsUser: 1000      # (Opcional, pero recomendado)
-        runAsGroup: 1000     # (Opcional, pero recomendado)
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        runAsNonRoot: true
-
+        runAsUser: 1000      # Usuario 1000
+        runAsGroup: 1000     # Grupo 1000
+        fsGroup: 1000        # ¡CRUCIAL! Hace que los volúmenes sean del grupo 1000
+        runAsNonRoot: true   # Seguridad extra: prohibido ser root
+      # -------------------------------------
       containers:
       - name: bazarr
         image: lscr.io/linuxserver/bazarr:latest
