@@ -7,3 +7,4 @@ data:
   PUID: "1000"
   PGID: "1000"
   TZ: "Europe/Madrid"
+  S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
