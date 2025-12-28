@@ -26,31 +26,26 @@ spec:
       labels:
         app: bazarr
     spec:
-# --- BLOQUE DE SEGURIDAD CORREGIDO ---
       securityContext:
-        runAsUser: 1000      # Usuario 1000
-        runAsGroup: 1000     # Grupo 1000
-        fsGroup: 1000        # ¡CRUCIAL! Hace que los volúmenes sean del grupo 1000
-        runAsNonRoot: true   # Seguridad extra: prohibido ser root
-      # -------------------------------------
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
       containers:
       - name: bazarr
         image: lscr.io/linuxserver/bazarr:latest
-        
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-
         envFrom:
         - configMapRef:
             name: common-env
-
         ports:
         - containerPort: 6767
           name: http
-
         livenessProbe:
           tcpSocket:
             port: 6767
@@ -61,24 +56,19 @@ spec:
             port: 6767
           initialDelaySeconds: 15
           periodSeconds: 10
-
         resources:
           requests:
             cpu: 10m
             memory: 128Mi
           limits:
-            cpu: 500m
             memory: 1Gi 
-
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
           mountPath: /data
-        # 👇 ESTO ES LO QUE ARREGLA EL ERROR 👇
         - name: temp
-          mountPath: /run
-          
+          mountPath: /run  
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -86,14 +76,13 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: qbit-downloads
-      # 👇 VOLUMEN TEMPORAL NECESARIO 👇
       - name: temp
         emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: bazarr-lb
+  name: bazarr
   namespace: downloads
 spec:
   type: ClusterIP
@@ -103,3 +92,4 @@ spec:
     - port: 80
       targetPort: 6767
       protocol: TCP
+EOF
