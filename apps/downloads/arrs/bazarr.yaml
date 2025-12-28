@@ -83,6 +83,8 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /data # Vital para que encuentre los archivos de video
+        - name: temp-run
+          mountPath: /run  # <--- NUEVO: Soluciona el error de s6-overlay
           
       volumes:
       - name: config
@@ -91,6 +93,8 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: qbit-downloads
+      - name: temp-run     # <--- NUEVO: Disco temporal en RAM/Disco
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
