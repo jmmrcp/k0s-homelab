@@ -21,6 +21,11 @@ spec:
         image: intel/intel-gpu-plugin:latest
         securityContext:
           privileged: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: true   # <--- CORREGIDO
+          capabilities:
+            drop:
+            - ALL
         volumeMounts:
         - name: devfs
           mountPath: /dev/dri
