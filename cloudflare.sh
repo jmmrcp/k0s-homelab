@@ -1,1 +1,0 @@
-kubeseal < /home/user/mnt/sp/KUBERNETES/OLD/app-secrets.yaml > infrastructure/network/cloudflare-token-secret.yaml --format=yaml
