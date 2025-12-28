@@ -18,7 +18,7 @@ spec:
         feature.node.kubernetes.io/pci-0300_8086.present: "true" # Detectado por NFD
       containers:
       - name: intel-gpu-plugin
-        image: intel/intel-gpu-plugin:0.34.1
+        image: intel/intel-gpu-plugin:0.30.0
         securityContext:
           privileged: true
           readOnlyRootFilesystem: true
