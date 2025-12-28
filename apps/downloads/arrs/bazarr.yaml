@@ -27,6 +27,9 @@ spec:
         app: bazarr
     spec:
       securityContext:
+        fsGroup: 1000        # <--- Esto hace que los volúmenes sean escribibles por el usuario 1000
+        runAsUser: 1000      # (Opcional, pero recomendado)
+        runAsGroup: 1000     # (Opcional, pero recomendado)
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
