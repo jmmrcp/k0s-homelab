@@ -15,7 +15,6 @@ spec:
       labels:
         app: filebrowser
     spec:
-      # Seguridad a nivel de Pod
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -25,35 +24,32 @@ spec:
       - name: filebrowser
         image: filebrowser/filebrowser:latest
         
-        # Argumentos de inicio corregidos
         args:
-        - "--root=/srv"      # La carpeta que verás en la web
-        - "--address=0.0.0.0" # Escuchar en todas las interfaces
-        - "--noauth"         # Sin login (confiamos en la seguridad de Tailscale/Ingress)
-        # Si quieres usuario/contraseña, borra la línea de "--noauth"
+        - "--root=/srv"
+        - "--address=0.0.0.0"
+        - "--port=8080"      # <--- NUEVO: Usar puerto no privilegiado
+        - "--noauth"         # Opcional: Quita esto si quieres login
         
-        # Variables comunes
         envFrom:
         - configMapRef:
             name: common-env
             
         ports:
-        - containerPort: 80
+        - containerPort: 8080 # <--- CAMBIO: 80 -> 8080
           name: http
           
-        # Control de Salud
+        # Control de Salud (Actualizado al nuevo puerto)
         livenessProbe:
           tcpSocket:
-            port: 80
+            port: 8080        # <--- CAMBIO
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           tcpSocket:
-            port: 80
+            port: 8080        # <--- CAMBIO
           initialDelaySeconds: 5
           periodSeconds: 10
           
-        # Límites de Recursos (Es muy ligero)
         resources:
           requests:
             cpu: 10m
@@ -64,27 +60,27 @@ spec:
             
         volumeMounts:
         - name: data
-          mountPath: /srv # Aquí se monta tu disco de películas
+          mountPath: /srv
         - name: config
-          mountPath: /config # Aquí se guarda la DB temporal
+          mountPath: /config
           
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: qbit-downloads
       - name: config
-        emptyDir: {} # Configuración volátil para evitar corrupción de DB
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: filebrowser-lb # Mantenemos el nombre antiguo para no romper enlaces DNS
+  name: filebrowser-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo accesible internamente
+  type: ClusterIP
   selector:
     app: filebrowser
   ports:
-    - port: 80
-      targetPort: 80
+    - port: 80           # El puerto EXTERNO sigue siendo 80 (para no romper enlaces)
+      targetPort: 8080   # El puerto INTERNO ahora es 8080
       protocol: TCP
