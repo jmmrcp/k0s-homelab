@@ -26,11 +26,6 @@ spec:
       labels:
         app: readarr
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        runAsNonRoot: true
       containers:
       - name: readarr
         image: lscr.io/linuxserver/readarr:develop
