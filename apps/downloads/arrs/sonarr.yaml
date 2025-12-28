@@ -26,28 +26,24 @@ spec:
       labels:
         app: sonarr
     spec:
+      # SIN securityContext a nivel de Pod (s6-overlay requiere root al inicio)
+
       containers:
       - name: sonarr
         image: lscr.io/linuxserver/sonarr:latest
         
-        # --- SEGURIDAD CONTENEDOR ---
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
+        # SIN securityContext a nivel de Contenedor
 
-        # --- ENTORNO ---
+        # Carga PUID=1000, PGID=1000, TZ desde tu configuración común
         envFrom:
         - configMapRef:
-            name: common-env # Carga PUID, PGID y TZ
+            name: common-env
 
-        # --- PUERTOS ---
         ports:
         - containerPort: 8989
           name: http
 
-        # --- CONTROL DE SALUD ---
+        # Control de salud
         livenessProbe:
           tcpSocket:
             port: 8989
@@ -60,23 +56,20 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 10
 
-        # --- RECURSOS ---
+        # Límites de recursos (Sonarr necesita más RAM que los otros)
         resources:
           requests:
             cpu: 10m
             memory: 256Mi
           limits:
             cpu: 1000m
-            memory: 1.5Gi # Sonarr necesita margen para tareas programadas
+            memory: 1.5Gi
 
-        # --- DISCOS ---
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
-          mountPath: /data # Vital que sea /data para compartir con qBit
-        - name: temp-run
-          mountPath: /run  # <--- NUEVO: Soluciona el error de s6-overlay
+          mountPath: /data # Vital para Hardlinks
           
       volumes:
       - name: config
@@ -85,16 +78,14 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: qbit-downloads
-      - name: temp-run     # <--- NUEVO: Disco temporal en RAM/Disco
-        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonarr-lb # Mantenemos el nombre para compatibilidad con Ingress
+  name: sonarr-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo accesible internamente
+  type: ClusterIP # Solo interno
   selector:
     app: sonarr
   ports:

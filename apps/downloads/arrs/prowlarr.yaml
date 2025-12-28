@@ -26,42 +26,36 @@ spec:
       labels:
         app: prowlarr
     spec:
+      # SIN securityContext a nivel de Pod (s6-overlay requiere root al inicio)
+
       containers:
       - name: prowlarr
         image: lscr.io/linuxserver/prowlarr:latest
         
-        # --- SEGURIDAD CONTENEDOR ---
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
+        # SIN securityContext a nivel de Contenedor
 
-        # --- ENTORNO ---
+        # Carga PUID=1000, PGID=1000, TZ desde tu configuración común
         envFrom:
         - configMapRef:
-            name: common-env # Carga PUID, PGID y TZ
+            name: common-env
 
-        # --- PUERTOS ---
         ports:
         - containerPort: 9696
           name: http
 
-        # --- CONTROL DE SALUD ---
+        # Control de salud
         livenessProbe:
           tcpSocket:
             port: 9696
           initialDelaySeconds: 30
           periodSeconds: 20
-          failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 9696
           initialDelaySeconds: 15
           periodSeconds: 10
 
-        # --- RECURSOS ---
-        # Prowlarr es muy ligero, no necesita tanta RAM como Sonarr
+        # Límites de recursos (Prowlarr es muy ligero)
         resources:
           requests:
             cpu: 10m
@@ -70,16 +64,13 @@ spec:
             cpu: 500m
             memory: 512Mi
 
-        # --- DISCOS ---
         volumeMounts:
         - name: config
           mountPath: /config
-        # Aunque Prowlarr no suele mover archivos, lo montamos por consistencia
+        # Montamos /data aunque Prowlarr no mueva archivos, para mantener consistencia
         # y por si usas "Blackhole" como cliente de descarga.
         - name: media
-          mountPath: /data 
-        - name: temp-run
-          mountPath: /run  # <--- NUEVO: Soluciona el error de s6-overlay
+          mountPath: /data
           
       volumes:
       - name: config
@@ -88,16 +79,14 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: qbit-downloads
-      - name: temp-run     # <--- NUEVO: Disco temporal en RAM/Disco
-        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: prowlarr-lb # Mantenemos sufijo -lb para consistencia con Ingress
+  name: prowlarr-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo accesible internamente
+  type: ClusterIP
   selector:
     app: prowlarr
   ports:

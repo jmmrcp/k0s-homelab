@@ -26,58 +26,49 @@ spec:
       labels:
         app: lidarr
     spec:
+      # SIN securityContext a nivel de Pod (para evitar error s6-overlay)
+
       containers:
       - name: lidarr
         image: lscr.io/linuxserver/lidarr:latest
         
-        # --- SEGURIDAD CONTENEDOR ---
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
+        # SIN securityContext a nivel de Contenedor
 
-        # --- ENTORNO ---
+        # Carga PUID=1000, PGID=1000, TZ desde tu configuración común
         envFrom:
         - configMapRef:
-            name: common-env # Carga PUID, PGID y TZ
+            name: common-env
 
-        # --- PUERTOS ---
         ports:
         - containerPort: 8686
           name: http
 
-        # --- CONTROL DE SALUD ---
+        # Control de salud para reiniciar si se cuelga
         livenessProbe:
           tcpSocket:
             port: 8686
           initialDelaySeconds: 30
           periodSeconds: 20
-          failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 8686
           initialDelaySeconds: 15
           periodSeconds: 10
 
-        # --- RECURSOS ---
-        # Lidarr consume RAM al escanear bibliotecas con muchas canciones
+        # Límites de recursos (Lidarr consume RAM al escanear música)
         resources:
           requests:
             cpu: 10m
             memory: 256Mi
           limits:
             cpu: 1000m
-            memory: 1Gi 
+            memory: 1Gi
 
-        # --- DISCOS ---
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
-          mountPath: /data # Vital para hardlinks con qBittorrent
-        - name: temp-run
-          mountPath: /run  # <--- NUEVO: Soluciona el error de s6-overlay
+          mountPath: /data # Vital para Hardlinks con qBittorrent
           
       volumes:
       - name: config
@@ -86,16 +77,14 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: qbit-downloads
-      - name: temp-run     # <--- NUEVO: Disco temporal en RAM/Disco
-        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: lidarr-lb # Mantenemos el nombre para no romper Ingress
+  name: lidarr-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo accesible internamente
+  type: ClusterIP # Solo interno
   selector:
     app: lidarr
   ports:
