@@ -1,3 +1,4 @@
+# --- 1. ALMACENAMIENTO (Caché) ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -7,17 +8,20 @@ spec:
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
-      storage: 10Gi # Espacio para el buffer de descarga
+      storage: 10Gi
 ---
+# --- 2. DEPLOYMENT (Solo Server) ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stremio
   namespace: downloads
+  labels:
+    app: stremio
 spec:
   replicas: 1
   strategy:
-    type: Recreate # Importante para no corromper la caché
+    type: Recreate
   selector:
     matchLabels:
       app: stremio
@@ -27,24 +31,8 @@ spec:
         app: stremio
     spec:
       containers:
-      # --- CONTENEDOR 1: INTERFAZ WEB ---
-      - name: stremio-web
-        image: stremio/stremio-web:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-          name: web
-        env:
-        - name: NO_CORS
-          value: "1"
-        resources:
-          requests:
-            cpu: "10m"
-            memory: "64Mi"
-          limits:
-            memory: "256Mi"
-
-      # --- CONTENEDOR 2: STREAMING SERVER ---
+      # He borrado el contenedor "web" porque la imagen no existe.
+      # Dejamos solo el servidor:
       - name: stremio-server
         image: stremio/server:latest
         imagePullPolicy: Always
@@ -62,13 +50,13 @@ spec:
             cpu: "50m"
             memory: "128Mi"
           limits:
-            memory: "1Gi" # Le damos RAM para manejar el buffer
-      
+            memory: "2Gi"
       volumes:
       - name: cache
         persistentVolumeClaim:
           claimName: stremio-cache
 ---
+# --- 3. SERVICIO ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -79,13 +67,11 @@ spec:
   selector:
     app: stremio
   ports:
-    - name: web
-      port: 80
-      targetPort: 8080
     - name: server
       port: 11470
       targetPort: 11470
 ---
+# --- 4. INGRESS ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -93,25 +79,17 @@ metadata:
   namespace: downloads
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    # Necesario para que el servidor de streaming funcione tras el proxy
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_set_headers "Access-Control-Allow-Origin: *";
 spec:
   ingressClassName: nginx
   rules:
-  # Regla 1: Dominio Local (PC/Móvil)
+  # Regla: stremio.lan
   - host: stremio.lan
     http:
       paths:
+      # Todo el tráfico va al servidor directamente
       - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: stremio
-            port:
-              name: web
-      # Ruta especial para conectar al servidor de streaming
-      - path: /server/
         pathType: Prefix
         backend:
           service:
@@ -119,8 +97,7 @@ spec:
             port:
               name: server
 
-  # Regla 2: Acceso por IP (Para que funcione en la TV si usas navegador)
-  # Nota: Stremio tiene app nativa en Android TV, pero esto sirve para el navegador.
+  # Regla IP (Para TV)
   - http:
       paths:
       - path: /stremio
@@ -129,4 +106,4 @@ spec:
           service:
             name: stremio
             port:
-              name: web
+              name: server
