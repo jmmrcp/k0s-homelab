@@ -26,21 +26,10 @@ spec:
     - prowlarr.lan
     - bazarr.lan
     - qbittorrent.lan
-    - pedir.lan      # Para Jellyseerr
-    - archivos.lan   # Para FileBrowser
+    - jellyseerr.lan      # Para Jellyseerr
+    - filebrowser.lan   # Para FileBrowser
     secretName: multimedia-tls-cert # Certificado único compartido
   rules:
-  # --- JELLYFIN ---
-  - host: jellyfin.lan
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: jellyfin-lb
-            port:
-              number: 80
               
   # --- SONARR ---
   - host: sonarr.lan
@@ -115,7 +104,7 @@ spec:
               number: 80
 
   # --- JELLYSEERR ---
-  - host: pedir.lan
+  - host: jellyseerr.lan
     http:
       paths:
       - path: /
@@ -127,7 +116,7 @@ spec:
               number: 80
 
   # --- FILEBROWSER ---
-  - host: archivos.lan
+  - host: filebrowser.lan
     http:
       paths:
       - path: /
