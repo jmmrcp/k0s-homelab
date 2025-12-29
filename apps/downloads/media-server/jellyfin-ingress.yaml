@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-ingress
+  namespace: downloads
+  annotations:
+    # Permite subir archivos grandes/streaming sin cortes
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    # Opcional: Si quieres forzar que no use HTTPS para la TV (a veces ayuda con errores de certificado)
+    # nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+  # Regla 1: Para tus PCs (DNS .lan)
+  - host: jellyfin.lan 
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin-lb  # <--- CORRECCIÓN: Tu servicio se llama jellyfin-lb
+            port:
+              number: 80
+              
+  # Regla 2: Para la Google TV (Acceso por IP directa)
+  # IMPORTANTE: 192.168.18.210 debe ser la IP de tu Ingress Controller (MetalLB), no la del pod.
+  - host: "192.168.18.210"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin-lb
+            port:
+              number: 80
