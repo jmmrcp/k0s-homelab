@@ -9,7 +9,7 @@ resources:
   # 2. Configuraciones Globales
   - configs/common-env.yaml      # PUID, PGID, TZ
   - configs/network-policy.yaml  # Firewall interno
-  - config/multimedia-ingress.yaml 
+  - configs/multimedia-ingress.yaml 
   
   # 3. Servidores Multimedia
   - media-server/jellyfin.yaml
