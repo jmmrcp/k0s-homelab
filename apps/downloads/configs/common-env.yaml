@@ -4,7 +4,21 @@ metadata:
   name: common-env
   namespace: downloads
 data:
+  # --- PERMISOS (Crítico para la Stack *Arr*) ---
+  # Asegura que Radarr pueda mover lo que baja qBittorrent
   PUID: "1000"
   PGID: "1000"
-  TZ: "Europe/Madrid"
+  # S6 es usado por imágenes de LinuxServer.io (muy comunes en HomeLab)
   S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
+  
+  # --- CONFIGURACIÓN GENERAL ---
+  TZ: "Europe/Madrid"
+  
+  # --- OPTIMIZACIÓN DE MEMORIA (La "Magia") ---
+  # Radarr, Sonarr, Lidarr, Prowlarr y Jellyfin están hechos en .NET
+  # Esta variable evita que cada uno reserve memoria "por si acaso".
+  # En tu cluster, esto puede ahorrarte 2-3 GB de RAM en total.
+  MALLOC_ARENA_MAX: "2"
+  
+  # Opcional: Desactiva telemetría de .NET para ahorrar un poco de CPU
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
