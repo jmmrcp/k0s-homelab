@@ -1,0 +1,139 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multimedia-ingress
+  namespace: downloads
+  annotations:
+    # Usamos NGINX como controlador
+    kubernetes.io/ingress.class: nginx
+    
+    # Usamos el emisor de certificados autofirmado que creamos en infrastructure
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    
+    # Forzar siempre HTTPS (Candado cerrado)
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Permitir subida de archivos ilimitada (Vital para FileBrowser y Jellyfin)
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - jellyfin.lan
+    - sonarr.lan
+    - radarr.lan
+    - lidarr.lan
+    - prowlarr.lan
+    - bazarr.lan
+    - qbittorrent.lan
+    - pedir.lan      # Para Jellyseerr
+    - archivos.lan   # Para FileBrowser
+    secretName: multimedia-tls-cert # Certificado único compartido
+  rules:
+  # --- JELLYFIN ---
+  - host: jellyfin.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin-lb
+            port:
+              number: 80
+              
+  # --- SONARR ---
+  - host: sonarr.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarr-lb
+            port:
+              number: 80
+
+  # --- RADARR ---
+  - host: radarr.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr-lb
+            port:
+              number: 80
+
+  # --- LIDARR ---
+  - host: lidarr.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: lidarr-lb
+            port:
+              number: 80
+
+  # --- PROWLARR ---
+  - host: prowlarr.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prowlarr-lb
+            port:
+              number: 80
+
+  # --- BAZARR ---
+  - host: bazarr.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bazarr-lb
+            port:
+              number: 80
+
+  # --- QBITTORRENT ---
+  - host: qbittorrent.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qbittorrent-lb
+            port:
+              number: 80
+
+  # --- JELLYSEERR ---
+  - host: pedir.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyseerr-lb
+            port:
+              number: 80
+
+  # --- FILEBROWSER ---
+  - host: archivos.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: filebrowser-lb
+            port:
+              number: 80
