@@ -58,6 +58,7 @@ spec:
         resources:
           requests:
             memory: "256Mi"
+            cpu: "250m"
           limits:
             memory: "2Gi"   # Límite para proteger el nodo
             cpu: "2000m"
