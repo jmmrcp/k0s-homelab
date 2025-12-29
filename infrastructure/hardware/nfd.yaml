@@ -70,6 +70,14 @@ spec:
         name: nfd-master
         command:
         - nfd-master
+        # --- BLOQUE AÑADIDO ---
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "64Mi"
+          limits:
+            memory: "512Mi"  # Esto asegura que no reserve 4GB
+        # ----------------------
         volumeMounts:
         - mountPath: /etc/kubernetes/node-feature-discovery/
           name: nfd-master-conf
