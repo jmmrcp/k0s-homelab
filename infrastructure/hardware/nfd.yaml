@@ -136,6 +136,14 @@ spec:
         - nfd-worker
         image: registry.k8s.io/nfd/node-feature-discovery:v0.16.6
         name: nfd-worker
+        # --- BLOQUE AÑADIDO ---
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "32Mi"
+          limits:
+            memory: "256Mi"
+        # ----------------------
         volumeMounts:
         - mountPath: /host-sys/
           name: host-sys
@@ -197,3 +205,11 @@ spec:
         - nfd-gc
         image: registry.k8s.io/nfd/node-feature-discovery:v0.16.6
         name: nfd-gc
+        # --- BLOQUE AÑADIDO ---
+        resources:
+          requests:
+            cpu: "5m"
+            memory: "10Mi"
+          limits:
+            memory: "64Mi"
+        # ---------------------
