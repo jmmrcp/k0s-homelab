@@ -17,7 +17,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate # CRUCIAL para evitar bloqueo de GPU
+    type: Recreate # Esto soluciona el bloqueo de la GPU
   selector:
     matchLabels:
       app: jellyfin
@@ -33,12 +33,18 @@ spec:
       containers:
       - name: jellyfin
         image: jellyfin/jellyfin:latest
+        # --- AÑADE ESTE BLOQUE ---
+        envFrom:
+        - configMapRef:
+            name: common-env
+        # -------------------------
         resources:
           requests:
             memory: "1Gi"
+            cpu: "100m"
           limits:
-            memory: "4Gi"
-            gpu.intel.com/i915: 1 # Plugin Intel
+            memory: "2Gi" # Optimizado: Bajado de 4Gi para dar aire al sistema
+            gpu.intel.com/i915: 1
         volumeMounts:
         - name: media
           mountPath: /data
@@ -60,9 +66,10 @@ metadata:
   name: jellyfin-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Todo interno, acceso por Ingress/Tailscale
+  type: ClusterIP
   selector:
     app: jellyfin
   ports:
     - port: 80
       targetPort: 8096
+---
