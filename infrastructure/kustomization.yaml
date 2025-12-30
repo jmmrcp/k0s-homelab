@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - controllers/metallb-install.yaml
   - controllers/ingress-nginx.yaml # (Descarga el yaml oficial o pon el link remoto)
+  - controllers/certificate.yaml
   - controllers/cert-manager.yaml  # (Descarga el yaml oficial)
   - controllers/sealed-secrets.yaml # (Descarga el yaml oficial)
   - controllers/self-signed-issuers.yaml
@@ -10,3 +11,6 @@ resources:
   - network/cloudflare-tunnel.yaml
   - storage/pv-manual-media.yaml
   - hardware/intel-gpu.yaml
+  
+patchesStrategicMerge:
+  - controllers/patch-ingress-nginx.ya
