@@ -10,9 +10,9 @@ data:
         errors
         # Mapeo de tus dominios locales a la IP del Ingress
         hosts {
-            192.168.18.210 jellyfin.lan # <--- PON AQUÍ LA IP DE TU INGRESS
-            192.168.18.210 qbittorrent.lan # <--- LA MISMA IP
-            
+            192.168.18.210 jellyfin.lan 
+            192.168.18.210 qbittorrent.lan 
+            192.168.18.210 jellyser.lan 
             fallthrough
         }
         forward . 1.1.1.1 8.8.8.8
