@@ -126,3 +126,26 @@ spec:
             name: filebrowser-lb
             port:
               number: 80
+  # --- JELLYFIN -----
+  - host: jellyfin.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin-lb
+            port:
+              number: 80
+
+  # Regla 2: "Catch-all" para la IP (TV)
+  # ELIMINAMOS LA LÍNEA "host: ..."
+  - http: 
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin-lb
+            port:
+              number: 80
