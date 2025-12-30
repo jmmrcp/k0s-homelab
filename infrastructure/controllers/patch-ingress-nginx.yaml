@@ -1,0 +1,6 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: ingress-nginx-admission
+  annotations:
+    cert-manager.io/inject-ca-from: ingress-nginx/ingress-nginx-admission

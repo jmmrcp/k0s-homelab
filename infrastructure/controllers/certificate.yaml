@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ingress-nginx-admission
+  namespace: ingress-nginx
+spec:
+  secretName: ingress-nginx-admission
+  dnsNames:
+    - ingress-nginx-controller-admission.ingress-nginx.svc
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned-issuer
