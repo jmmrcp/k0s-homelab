@@ -30,5 +30,11 @@ resources:
   # - arrs/bazarr.yaml
   # - arrs/readarr.yaml (Si decides añadir libros también)
 
-patchesStrategicMerge:
-  - configs/patch-caBundle.yaml
+
+patchesJson6902:
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingWebhookConfiguration
+      name: ingress-nginx-admission
+    path: configs/patch-caBundle.yaml
