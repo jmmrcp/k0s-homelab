@@ -13,4 +13,4 @@ resources:
   - hardware/intel-gpu.yaml
   
 patchesStrategicMerge:
-  - controllers/patch-ingress-nginx.ya
+  - controllers/patch-ingress-nginx.yaml
