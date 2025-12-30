@@ -29,3 +29,6 @@ resources:
   # - arrs/prowlarr.yaml
   # - arrs/bazarr.yaml
   # - arrs/readarr.yaml (Si decides añadir libros también)
+
+patchesStrategicMerge:
+  - patch-caBundle.yaml
