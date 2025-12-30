@@ -31,4 +31,4 @@ resources:
   # - arrs/readarr.yaml (Si decides añadir libros también)
 
 patchesStrategicMerge:
-  - patch-caBundle.yaml
+  - configs/patch-caBundle.yaml
