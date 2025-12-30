@@ -14,8 +14,8 @@ resources:
   # 3. Servidores Multimedia
   - media-server/jellyfin.yaml
   - media-server/jellyfin-ingress.yaml
-  - media-server/stremio.yaml
-  # - media-server/jellyseerr.yaml
+  # - media-server/stremio.yaml
+  - media-server/jellyseerr.yaml
   # - media-server/filebrowser.yaml
   
   # 4. Gestores de Descarga
