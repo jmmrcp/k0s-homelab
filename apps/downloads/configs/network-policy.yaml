@@ -20,6 +20,13 @@ spec:
   policyTypes:
   - Ingress
   ingress:
+  # --- BLOQUE NUEVO PARA TAILSCALE Y LAN ---
+  - from:
+    - ipBlock:
+        cidr: 100.64.0.0/10       # Rango oficial de Tailscale
+    - ipBlock:
+        cidr: 192.168.18.0/24     # Tu Red Local (permite acceso directo por IP)
+  # -----------------------------------------
   # Ingress Controller
   - from:
     - namespaceSelector:
