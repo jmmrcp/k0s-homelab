@@ -14,3 +14,10 @@ resources:
   
 patchesStrategicMerge:
   - controllers/patch-ingress-nginx.yaml
+
+patches:
+  - target:
+      kind: ValidatingWebhookConfiguration
+      name: ingress-nginx-admission
+    patch: |-
+      $patch: delete
