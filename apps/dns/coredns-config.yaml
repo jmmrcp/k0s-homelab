@@ -18,7 +18,8 @@ data:
             192.168.18.210 lidarr.lan
             192.168.18.210 prowlarr.lan
             192.168.18.210 bazarr.lan
-            192.168.18.210.readarr.lan
+            192.168.18.210 readarr.lan
+            192.168.18.210 filebrowser.lan
             fallthrough
         }
         forward . 1.1.1.1 8.8.8.8
