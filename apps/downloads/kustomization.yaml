@@ -23,7 +23,7 @@ resources:
   # - downloaders/flaresolverr.yaml
   
   # 5. Stack Arr (Automatización)
-  # - arrs/radarr.yaml
+  - arrs/radarr.yaml
   # - arrs/sonarr.yaml
   # - arrs/lidarr.yaml
   # - arrs/prowlarr.yaml
