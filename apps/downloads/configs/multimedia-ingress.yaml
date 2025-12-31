@@ -118,16 +118,16 @@ spec:
               number: 80
               
   # --- REGLA INTERNET ---
-    - host: jellyseerr.computerwizards.es   # <--- ¡ESTA ES LA CLAVE!
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: jellyseerr-lb       # Apuntamos explícitamente a Jellyseerr
-              port:
-                number: 80
+  - host: jellyseerr.computerwizards.es   # <--- ¡ESTA ES LA CLAVE!
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyseerr-lb       # Apuntamos explícitamente a Jellyseerr
+            port:
+              number: 80
 
   # --- FILEBROWSER ---
   - host: filebrowser.lan
