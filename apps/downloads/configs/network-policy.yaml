@@ -1,27 +1,26 @@
 # 1. POLÍTICA BASE: DENEGAR TODO (Default Deny)
-# Nadie entra, nadie sale (salvo DNS y lo permitido explícitamente)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
   namespace: downloads
 spec:
-  podSelector: {} # Aplica a todos los pods
+  podSelector: {} 
   policyTypes:
   - Ingress
 ---
-# 2. ACCESO EXTERNO (Ingress, Cloudflare y Monitorización)
+# 2. ACCESO EXTERNO
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-external-access
   namespace: downloads
 spec:
-  podSelector: {} # Permitimos que entren a cualquier pod si vienen de fuentes fiables
+  podSelector: {}
   policyTypes:
   - Ingress
   ingress:
-  # Permitir tráfico desde el Ingress Controller (Tu acceso .lan / HTTPS)
+  # Ingress Controller
   - from:
     - namespaceSelector:
         matchLabels:
@@ -47,8 +46,7 @@ spec:
       port: 9696
     - protocol: TCP
       port: 6767
-
-  # Permitir tráfico desde Cloudflare Tunnel (Tu acceso externo .com)
+  # Cloudflare Tunnel
   - from:
     - namespaceSelector:
         matchLabels:
@@ -56,8 +54,7 @@ spec:
       podSelector:
         matchLabels:
           app: cloudflared
-
-  # Permitir tráfico desde el sistema de monitorización (Metrics Server)
+  # Monitorización
   - from:
     - namespaceSelector:
         matchLabels:
@@ -84,7 +81,7 @@ spec:
             values: [radarr, sonarr, lidarr, readarr, prowlarr, jellyseerr]
     ports:
     - protocol: TCP
-      port: 8080 # Puerto de qBittorrent
+      port: 8080 
 
   # B. Permitir entrar a FlareSolverr (desde Prowlarr)
   - from:
@@ -93,16 +90,16 @@ spec:
           app: prowlarr
     ports:
     - protocol: TCP
-      port: 8191 # Puerto de FlareSolverr
+      port: 8191
 
-  # C. Permitir entrar a los Arrs (desde Jellyseerr, Bazarr y Prowlarr)
-  # Radarr, Sonarr, Lidarr, Readarr reciben órdenes
+  # C. Permitir entrar a los Arrs y Prowlarr
+  # AQUÍ ESTABA EL ERROR: Faltaban radarr y sonarr en la lista de origen
   - from:
     - podSelector:
         matchExpressions:
           - key: app
             operator: In
-            values: [jellyseerr, bazarr, prowlarr]
+            values: [jellyseerr, bazarr, prowlarr, radarr, sonarr, lidarr, readarr]
     ports:
     - protocol: TCP
       port: 7878 # Radarr
@@ -115,11 +112,11 @@ spec:
     - protocol: TCP
       port: 9696 # Prowlarr
 
-  # D. Permitir entrar a Jellyfin (desde Jellyseerr y Kodi Sync si usaras)
+  # D. Permitir entrar a Jellyfin
   - from:
     - podSelector:
         matchLabels:
           app: jellyseerr
     ports:
     - protocol: TCP
-      port: 8096 # Jellyfin
+      port: 8096
