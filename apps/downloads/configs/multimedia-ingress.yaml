@@ -11,7 +11,7 @@ metadata:
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
     
     # Forzar siempre HTTPS (Candado cerrado)
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
     
     # Permitir subida de archivos ilimitada (Vital para FileBrowser y Jellyfin)
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
