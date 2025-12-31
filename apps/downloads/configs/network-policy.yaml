@@ -1,4 +1,4 @@
-# 1. POLÍTICA BASE: DENEGAR TODO (Default Deny)
+ 1. POLÍTICA BASE: DENEGAR TODO (Default Deny)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -26,8 +26,7 @@ spec:
         cidr: 100.64.0.0/10       # Rango oficial de Tailscale
     - ipBlock:
         cidr: 192.168.18.0/24     # Tu Red Local (permite acceso directo por IP)
-  # -----------------------------------------
-  # Ingress Controller
+  # Permitir tráfico desde el Ingress Controller (.lan / HTTPS)
   - from:
     - namespaceSelector:
         matchLabels:
