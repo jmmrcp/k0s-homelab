@@ -28,6 +28,8 @@ spec:
     - qbittorrent.lan
     - jellyseerr.lan      # Para Jellyseerr
     - filebrowser.lan   # Para FileBrowser
+    # --- DOMINIOS PÚBLICOS ---
+    - jellyseerr.computerwizards.es
     secretName: multimedia-tls-cert # Certificado único compartido
   rules:
               
@@ -114,6 +116,18 @@ spec:
             name: jellyseerr-lb
             port:
               number: 80
+              
+  # --- REGLA INTERNET (AÑADE ESTO) ---
+    - host: jellyseerr.computerwizards.es   # <--- ¡ESTA ES LA CLAVE!
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: jellyseerr-lb       # Apuntamos explícitamente a Jellyseerr
+              port:
+                number: 80
 
   # --- FILEBROWSER ---
   - host: filebrowser.lan
