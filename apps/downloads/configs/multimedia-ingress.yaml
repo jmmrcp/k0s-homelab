@@ -117,7 +117,7 @@ spec:
             port:
               number: 80
               
-  # --- REGLA INTERNET (AÑADE ESTO) ---
+  # --- REGLA INTERNET ---
     - host: jellyseerr.computerwizards.es   # <--- ¡ESTA ES LA CLAVE!
       http:
         paths:
