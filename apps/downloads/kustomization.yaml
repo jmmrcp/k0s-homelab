@@ -25,7 +25,7 @@ resources:
   - arrs/radarr.yaml
   - arrs/sonarr.yaml
   # - arrs/lidarr.yaml
-  # - arrs/prowlarr.yaml
+  - arrs/prowlarr.yaml
   # - arrs/bazarr.yaml
   # - arrs/readarr.yaml (Si decides añadir libros también)
 
