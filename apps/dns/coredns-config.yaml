@@ -12,7 +12,13 @@ data:
         hosts {
             192.168.18.210 jellyfin.lan 
             192.168.18.210 qbittorrent.lan 
-            192.168.18.210 jellyseerr.lan 
+            192.168.18.210 jellyseerr.lan
+            192.168.18.210 radarr.lan
+            192.168.18.210 sonarr.lan
+            192.168.18.210 lidarr.lan
+            192.168.18.210 prowlarr.lan
+            192.168.18.210 bazarr.lan
+            192.168.18.210.readarr.lan
             fallthrough
         }
         forward . 1.1.1.1 8.8.8.8
