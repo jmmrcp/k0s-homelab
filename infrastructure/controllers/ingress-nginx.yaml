@@ -481,10 +481,15 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        # --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
         resources:
           requests:
             cpu: 100m
             memory: 90Mi
+          limits:
+            # 512Mi es perfecto para buffering de video (Jellyfin)
+            memory: 512Mi
+            cpu: 1000m            
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
