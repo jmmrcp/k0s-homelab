@@ -14,10 +14,13 @@ kind: Deployment
 metadata:
   name: jellyfin
   namespace: downloads
+  labels:
+    app: jellyfin
 spec:
   replicas: 1
+  # CRÍTICO: Recreate es obligatorio para liberar la GPU y evitar corrupción de DB.
   strategy:
-    type: Recreate # Esto soluciona el bloqueo de la GPU
+    type: Recreate
   selector:
     matchLabels:
       app: jellyfin
@@ -26,32 +29,80 @@ spec:
       labels:
         app: jellyfin
     spec:
+      # Seguridad: Corremos como usuario 1000 (tu usuario) para evitar problemas de permisos con los archivos
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        
       containers:
       - name: jellyfin
         image: jellyfin/jellyfin:latest
-        # --- AÑADE ESTE BLOQUE ---
+        imagePullPolicy: IfNotPresent
+        
         envFrom:
         - configMapRef:
             name: common-env
-        # -------------------------
+
+        # Variables extra útiles para rendimiento
+        env:
+        - name: JELLYFIN_PublishedServerUrl
+          value: "jellyfin.local" # Opcional: Ayuda al autodescubrimiento
+        - name: JELLYFIN_CACHE_DIR
+          value: "/cache"
+
+        ports:
+        - containerPort: 8096
+          name: http
+        
+        # --- MONITORIZACIÓN DE SALUD (VITAL PARA JELLYFIN) ---
+        # Si Jellyfin se cuelga transcodificando, Kubernetes lo reiniciará.
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8096
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 3
+          timeoutSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8096
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        
+        # Jellyfin tarda en escanear plugins al inicio
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8096
+          failureThreshold: 30
+          periodSeconds: 10
+
+        # --- RECURSOS Y GPU ---
         resources:
           requests:
-            memory: "1Gi"
+            # Bajamos el request de RAM para facilitar el scheduling.
+            # Jellyfin usará más si lo necesita, pero garantizamos 512Mi.
+            memory: "512Mi"
             cpu: "100m"
           limits:
-            memory: "2Gi" # Optimizado: Bajado de 4Gi para dar aire al sistema
+            # Límite duro. 2Gi suele sobrar salvo que tengas 50 usuarios.
+            memory: "2.5Gi"
+            # INTEL GPU PASSTHROUGH
             gpu.intel.com/i915: 1
+
         volumeMounts:
         - name: media
           mountPath: /data
         - name: config
           mountPath: /config
-        ports:
-        - containerPort: 8096
+        # MEJORA: Montamos cache en RAM/Disco efímero para velocidad de UI
+        - name: cache
+          mountPath: /cache
+          
       volumes:
       - name: media
         persistentVolumeClaim:
@@ -59,6 +110,9 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: jellyfin-config
+      # Volumen efímero (se borra al reiniciar pod) para caché rápido
+      - name: cache
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -72,4 +126,4 @@ spec:
   ports:
     - port: 80
       targetPort: 8096
----
+      protocol: TCP
