@@ -3,8 +3,13 @@ kind: Deployment
 metadata:
   name: flaresolverr
   namespace: downloads
+  labels:
+    app: flaresolverr
 spec:
   replicas: 1
+  # Usamos Recreate para no tener dos navegadores abiertos a la vez consumiendo RAM
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: flaresolverr
@@ -16,9 +21,62 @@ spec:
       containers:
       - name: flaresolverr
         image: flaresolverr/flaresolverr:latest
+        imagePullPolicy: IfNotPresent
+        
         envFrom:
         - configMapRef:
             name: common-env
+            
+        # Opcional: Reduce el ruido en los logs
+        env:
+        - name: LOG_LEVEL
+          value: info
+          
+        ports:
+        - containerPort: 8191
+          name: http
+
+        # --- MONITORIZACIÓN DE SALUD ---
+        # Flaresolverr responde en la raíz con un JSON.
+        # Si el navegador se cuelga, esto fallará y K8s reiniciará el pod.
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8191
+          initialDelaySeconds: 20
+          periodSeconds: 30
+          failureThreshold: 3
+          
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8191
+          initialDelaySeconds: 15
+          periodSeconds: 10
+
+        # --- RECURSOS ---
+        # 512Mi de límite está bien, pero necesitamos 'requests'
+        # para que K8s sepa dónde ponerlo.
         resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
           limits:
-            memory: "512Mi" # Evita OOM Kills
+            cpu: 1000m
+            memory: 512Mi 
+
+---
+# El servicio que permite a Prowlarr encontrarlo
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaresolverr
+  namespace: downloads
+spec:
+  type: ClusterIP
+  selector:
+    app: flaresolverr
+  ports:
+    - port: 8191
+      targetPort: 8191
+      protocol: TCP
