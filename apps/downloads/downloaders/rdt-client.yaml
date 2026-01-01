@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdt-client
+  namespace: downloads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rdt-client
+  template:
+    metadata:
+      labels:
+        app: rdt-client
+    spec:
+      containers:
+      - name: rdt-client
+        image: rogueosb/rdt-client:latest
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1024Mi" # .NET puede ser tragón al arrancar, luego baja
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "Europe/Madrid"
+        volumeMounts:
+        - name: data
+          mountPath: /data/downloads
+          subPath: torrents # Usamos la misma carpeta que usaba qBit
+        - name: config
+          mountPath: /data/db
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pvc-manual-media
+      - name: config
+        emptyDir: {} # O usa un PVC si quieres persistir la config del cliente
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rdt-client
+  namespace: downloads
+spec:
+  ports:
+  - port: 6500
+    targetPort: 6500
+    name: http
+  selector:
+    app: rdt-client
