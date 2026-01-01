@@ -18,6 +18,10 @@ metadata:
     app: sonarr
 spec:
   replicas: 1
+  # CRÍTICO: Recreate evita que dos pods de Sonarr corran a la vez durante updates.
+  # Si no lo pones, la base de datos SQLite se bloquea y corrompe.
+  strategy:
+    type: Recreate 
   selector:
     matchLabels:
       app: sonarr
@@ -26,15 +30,12 @@ spec:
       labels:
         app: sonarr
     spec:
-      # SIN securityContext a nivel de Pod (s6-overlay requiere root al inicio)
-
       containers:
       - name: sonarr
+        # RECOMENDACIÓN: Intenta no usar 'latest' en producción, mejor fija una versión (ej: :version-4.0.0)
         image: lscr.io/linuxserver/sonarr:latest
+        imagePullPolicy: IfNotPresent
         
-        # SIN securityContext a nivel de Contenedor
-
-        # Carga PUID=1000, PGID=1000, TZ desde tu configuración común
         envFrom:
         - configMapRef:
             name: common-env
@@ -43,33 +44,47 @@ spec:
         - containerPort: 8989
           name: http
 
-        # Control de salud
+        # --- MEJORA DE PROBES ---
+        # Usar HTTP en lugar de TCP garantiza que la APP funciona, no solo que el puerto abre.
         livenessProbe:
-          tcpSocket:
+          httpGet:
+            path: /ping
             port: 8989
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           periodSeconds: 20
           failureThreshold: 3
+          timeoutSeconds: 5
+        
         readinessProbe:
-          tcpSocket:
+          httpGet:
+            path: /ping
             port: 8989
           initialDelaySeconds: 15
           periodSeconds: 10
+          
+        # StartupProbe da tiempo extra SOLO al arrancar (útil si hay migraciones de DB)
+        startupProbe:
+          httpGet:
+            path: /ping
+            port: 8989
+          failureThreshold: 30
+          periodSeconds: 10
 
-        # Límites de recursos (Sonarr necesita más RAM que los otros)
+        # --- MEJORA DE RECURSOS ---
+        # Ajustado para ahorrar RAM según tu petición anterior.
         resources:
           requests:
-            cpu: 10m
-            memory: 256Mi
+            cpu: 20m
+            memory: 150Mi # Garantizamos lo mínimo necesario
           limits:
             cpu: 1000m
-            memory: 1.5Gi
+            memory: 512Mi # Bajado de 1.5Gi a 512Mi (suficiente y ahorra 1GB)
 
         volumeMounts:
         - name: config
           mountPath: /config
         - name: media
-          mountPath: /data # Vital para Hardlinks
+          mountPath: /data 
           
       volumes:
       - name: config
@@ -85,7 +100,7 @@ metadata:
   name: sonarr-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo interno
+  type: ClusterIP
   selector:
     app: sonarr
   ports:
