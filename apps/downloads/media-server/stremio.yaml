@@ -20,7 +20,6 @@ metadata:
     app: stremio
 spec:
   replicas: 1
-  # Recreate es correcto aquí para limpiar el volumen de caché si se reinicia
   strategy:
     type: Recreate
   selector:
@@ -34,28 +33,27 @@ spec:
       containers:
       - name: stremio-server
         image: stremio/server:latest
-        imagePullPolicy: Always # Recomendado con 'latest' para bajar actualizaciones al reiniciar
+        imagePullPolicy: Always
         
         ports:
         - containerPort: 11470
           name: server
-          
+        
         env:
         - name: NO_CORS
-          value: "1" # Vital para que funcione desde clientes web/TV
+          value: "1" # Vital para que la TV conecte
           
         volumeMounts:
         - name: cache
           mountPath: /root/.stremio-server
           
-        # --- MONITORIZACIÓN DE SALUD ---
+        # Probes de salud
         livenessProbe:
           httpGet:
             path: /
             port: 11470
           initialDelaySeconds: 15
           periodSeconds: 20
-          failureThreshold: 3
         
         readinessProbe:
           httpGet:
@@ -64,28 +62,32 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
 
-        # --- RECURSOS ---
         resources:
           requests:
             cpu: "50m"
             memory: "128Mi"
           limits:
-            # Stremio Server es ligero (es un relay). 1Gi es un techo seguro.
-            memory: "1Gi" 
+            memory: "1Gi"
 
       volumes:
       - name: cache
         persistentVolumeClaim:
           claimName: stremio-cache
 ---
-# --- 3. SERVICIO ---
+# --- 3. SERVICIO (METAL-LB) ---
 apiVersion: v1
 kind: Service
 metadata:
   name: stremio
   namespace: downloads
 spec:
-  type: ClusterIP
+  type: LoadBalancer
+  
+  # --- CAMBIO IMPORTANTE ---
+  # Asignamos una IP fija dentro de tu rango (192.168.18.200-220)
+  loadBalancerIP: 192.168.18.205
+  
+  externalTrafficPolicy: Local
   selector:
     app: stremio
   ports:
@@ -93,8 +95,14 @@ spec:
       port: 11470
       targetPort: 11470
       protocol: TCP
+    # Puerto 80 opcional para facilitar escritura en TV
+    - name: http
+      port: 80
+      targetPort: 11470
+      protocol: TCP
+
 ---
-# --- 4. INGRESS ---
+# --- 4. INGRESS (Opcional para PC/Móvil) ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -102,34 +110,15 @@ metadata:
   namespace: downloads
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    # CORS para permitir acceso desde la app web oficial
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
-    
-    # ⚠️ OJO: Si la ruta /stremio falla en la TV, descomenta la siguiente línea:
-    # nginx.ingress.kubernetes.io/rewrite-target: /$2
-    
 spec:
   ingressClassName: nginx
   rules:
-  # Opción A: Subdominio (La más robusta)
   - host: stremio.lan
     http:
       paths:
       - path: /
         pathType: Prefix
-        backend:
-          service:
-            name: stremio
-            port:
-              name: server
-
-  # Opción B: Acceso por IP/Ruta (Para TV)
-  # Nota: Si tu TV soporta mDNS o DNS local, usa stremio.lan mejor.
-  - http:
-      paths:
-      - path: /stremio(/|$)(.*) # Regex para capturar todo lo que venga después
-        pathType: ImplementationSpecific
         backend:
           service:
             name: stremio
