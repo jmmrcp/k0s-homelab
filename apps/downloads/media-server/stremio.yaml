@@ -10,7 +10,7 @@ spec:
     requests:
       storage: 10Gi
 ---
-# --- 2. DEPLOYMENT (Solo Server) ---
+# --- 2. DEPLOYMENT ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,6 +20,7 @@ metadata:
     app: stremio
 spec:
   replicas: 1
+  # Recreate es correcto aquí para limpiar el volumen de caché si se reinicia
   strategy:
     type: Recreate
   selector:
@@ -31,26 +32,47 @@ spec:
         app: stremio
     spec:
       containers:
-      # He borrado el contenedor "web" porque la imagen no existe.
-      # Dejamos solo el servidor:
       - name: stremio-server
         image: stremio/server:latest
-        imagePullPolicy: Always
+        imagePullPolicy: Always # Recomendado con 'latest' para bajar actualizaciones al reiniciar
+        
         ports:
         - containerPort: 11470
           name: server
+          
         env:
         - name: NO_CORS
-          value: "1"
+          value: "1" # Vital para que funcione desde clientes web/TV
+          
         volumeMounts:
         - name: cache
           mountPath: /root/.stremio-server
+          
+        # --- MONITORIZACIÓN DE SALUD ---
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 11470
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 11470
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        # --- RECURSOS ---
         resources:
           requests:
             cpu: "50m"
             memory: "128Mi"
           limits:
-            memory: "2Gi"
+            # Stremio Server es ligero (es un relay). 1Gi es un techo seguro.
+            memory: "1Gi" 
+
       volumes:
       - name: cache
         persistentVolumeClaim:
@@ -70,6 +92,7 @@ spec:
     - name: server
       port: 11470
       targetPort: 11470
+      protocol: TCP
 ---
 # --- 4. INGRESS ---
 apiVersion: networking.k8s.io/v1
@@ -79,16 +102,20 @@ metadata:
   namespace: downloads
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Access-Control-Allow-Origin: *";
+    # CORS para permitir acceso desde la app web oficial
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    
+    # ⚠️ OJO: Si la ruta /stremio falla en la TV, descomenta la siguiente línea:
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
+    
 spec:
   ingressClassName: nginx
   rules:
-  # Regla: stremio.lan
+  # Opción A: Subdominio (La más robusta)
   - host: stremio.lan
     http:
       paths:
-      # Todo el tráfico va al servidor directamente
       - path: /
         pathType: Prefix
         backend:
@@ -97,11 +124,12 @@ spec:
             port:
               name: server
 
-  # Regla IP (Para TV)
+  # Opción B: Acceso por IP/Ruta (Para TV)
+  # Nota: Si tu TV soporta mDNS o DNS local, usa stremio.lan mejor.
   - http:
       paths:
-      - path: /stremio
-        pathType: Prefix
+      - path: /stremio(/|$)(.*) # Regex para capturar todo lo que venga después
+        pathType: ImplementationSpecific
         backend:
           service:
             name: stremio
