@@ -18,6 +18,9 @@ metadata:
     app: jellyseerr
 spec:
   replicas: 1
+  # CRÍTICO: Recreate evita corrupción de la DB SQLite y bloqueos de archivos.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: jellyseerr
@@ -26,7 +29,7 @@ spec:
       labels:
         app: jellyseerr
     spec:
-      # Seguridad a nivel de Pod
+      # Seguridad a nivel de Pod (Correcto para LinuxServer/Fallenbagel)
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -35,13 +38,12 @@ spec:
       containers:
       - name: jellyseerr
         image: fallenbagel/jellyseerr:latest
+        imagePullPolicy: IfNotPresent
         
-        # Variables de entorno (Timezone, PUIDs) desde el ConfigMap común
         envFrom:
         - configMapRef:
             name: common-env
         
-        # Variables específicas
         env:
         - name: LOG_LEVEL
           value: "info"
@@ -50,27 +52,42 @@ spec:
         - containerPort: 5055
           name: http
         
-        # Control de Salud
+        # --- MONITORIZACIÓN MEJORADA (HTTP) ---
+        # Jellyseerr responde en la raíz '/'. TCP solo comprueba el puerto.
         livenessProbe:
-          tcpSocket:
+          httpGet:
+            path: /
             port: 5055
-          initialDelaySeconds: 30
-          periodSeconds: 20
+          initialDelaySeconds: 20
+          periodSeconds: 30
           failureThreshold: 3
+          timeoutSeconds: 5
+        
         readinessProbe:
-          tcpSocket:
+          httpGet:
+            path: /
             port: 5055
           initialDelaySeconds: 15
           periodSeconds: 10
+
+        # StartupProbe: Node.js a veces tarda un poco en compilar/iniciar tras un update
+        startupProbe:
+          httpGet:
+            path: /
+            port: 5055
+          failureThreshold: 30
+          periodSeconds: 5
         
-        # Límites de Recursos (NodeJS puede ser tragón, lo limitamos)
+        # --- OPTIMIZACIÓN DE RECURSOS ---
+        # Node.js es "perezoso" con la RAM. Si le das 1GB, usará 1GB.
+        # 512Mi es suficiente para una instancia doméstica.
         resources:
           requests:
             cpu: 10m
-            memory: 128Mi
+            memory: 150Mi
           limits:
             cpu: 1000m
-            memory: 1Gi
+            memory: 512Mi # Bajado de 1Gi. Ahorro: 512MB.
             
         volumeMounts:
         - name: config
@@ -84,10 +101,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jellyseerr-lb # Mantenemos el nombre "-lb" para no romper el Ingress existente
+  name: jellyseerr-lb
   namespace: downloads
 spec:
-  type: ClusterIP # Solo accesible desde dentro (Ingress/Cloudflare)
+  type: ClusterIP
   selector:
     app: jellyseerr
   ports:
