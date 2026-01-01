@@ -14,8 +14,13 @@ kind: Deployment
 metadata:
   name: radarr
   namespace: downloads
+  labels:
+    app: radarr
 spec:
   replicas: 1
+  # CRÍTICO: Evita corrupción de base de datos durante actualizaciones.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: radarr
@@ -27,20 +32,57 @@ spec:
       containers:
       - name: radarr
         image: linuxserver/radarr:latest
+        imagePullPolicy: IfNotPresent
+        
         envFrom:
         - configMapRef:
             name: common-env
+            
         ports:
         - containerPort: 7878
+          name: http
+
+        # --- MONITORIZACIÓN INTELIGENTE (HTTP) ---
         livenessProbe:
-          tcpSocket:
+          httpGet:
+            path: /ping
             port: 7878
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          failureThreshold: 3
+          timeoutSeconds: 5
+        
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 7878
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        
+        # Da tiempo si hay migraciones de DB al actualizar
+        startupProbe:
+          httpGet:
+            path: /ping
+            port: 7878
+          failureThreshold: 30
+          periodSeconds: 10
+
+        # --- OPTIMIZACIÓN DE RECURSOS ---
+        # Radarr es más ligero que Sonarr.
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi # Mínimo garantizado
+          limits:
+            cpu: 1000m
+            memory: 350Mi # Techo máximo (Ahorro significativo)
+
         volumeMounts:
         - name: config
           mountPath: /config
         - name: downloads
-          mountPath: /data # IMPORTANTE: /data para hardlinks
+          mountPath: /data # Mantenido para hardlinks
+          
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -61,3 +103,4 @@ spec:
   ports:
     - port: 80
       targetPort: 7878
+      protocol: TCP
