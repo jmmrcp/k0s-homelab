@@ -16,7 +16,7 @@ metadata:
   namespace: downloads
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: manual # Apunta al PV físico
+  storageClassName: manual # Mantenemos tu configuración de PV físico
   resources:
     requests:
       storage: 500Gi
@@ -26,8 +26,13 @@ kind: Deployment
 metadata:
   name: qbittorrent
   namespace: downloads
+  labels:
+    app: qbittorrent
 spec:
   replicas: 1
+  # CRÍTICO: Recreate evita problemas con los archivos de bloqueo (.lock) de sesión
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: qbittorrent
@@ -39,29 +44,66 @@ spec:
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
+      
       containers:
       - name: qbittorrent
         image: lscr.io/linuxserver/qbittorrent:latest
+        imagePullPolicy: IfNotPresent
+        
         envFrom:
         - configMapRef:
             name: common-env
+            
         env:
         - name: WEBUI_PORT
           value: "8080"
+          
         ports:
         - containerPort: 8080
+          name: http
+        # Añadimos el puerto de tráfico P2P estándar (TCP/UDP)
+        - containerPort: 6881
+          name: bittorrent-tcp
+          protocol: TCP
+        - containerPort: 6881
+          name: bittorrent-udp
+          protocol: UDP
+          
         volumeMounts:
         - name: config
           mountPath: /config
         - name: downloads
           mountPath: /data
+
+        # --- MONITORIZACIÓN DE SALUD ---
+        # Si la interfaz web no carga, reiniciamos el pod.
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+
+        # --- RECURSOS ---
         resources:
           requests:
             memory: "256Mi"
-            cpu: "250m"
+            cpu: "50m" # Bajamos el request de CPU, qBittorrent en reposo no gasta nada
           limits:
-            memory: "2Gi"   # Límite para proteger el nodo
+            # 2Gi es un buen límite. 
+            # IMPORTANTE: Configura en la UI de qBittorrent el "Disk Cache" a -1 (auto) 
+            # o a 512Mi para que no pelee con este límite.
+            memory: "2Gi"
             cpu: "2000m"
+            
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -80,5 +122,17 @@ spec:
   selector:
     app: qbittorrent
   ports:
-    - port: 80
+    # Web UI
+    - name: http
+      port: 80
       targetPort: 8080
+      protocol: TCP
+    # Tráfico BitTorrent (Importante declarar aunque no lo expongas por Ingress)
+    - name: bittorrent-tcp
+      port: 6881
+      targetPort: 6881
+      protocol: TCP
+    - name: bittorrent-udp
+      port: 6881
+      targetPort: 6881
+      protocol: UDP
