@@ -8,29 +8,29 @@ metadata:
     kubernetes.io/ingress.class: nginx
     
     # Usamos el emisor de certificados autofirmado que creamos en infrastructure
-    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    # cert-manager.io/cluster-issuer: "selfsigned-issuer"
     
     # Forzar siempre HTTPS (Candado cerrado)
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # nginx.ingress.kubernetes.io/ssl-redirect: "false"
     
     # Permitir subida de archivos ilimitada (Vital para FileBrowser y Jellyfin)
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-    - jellyfin.lan
-    - sonarr.lan
-    - radarr.lan
-    - lidarr.lan
-    - prowlarr.lan
-    - bazarr.lan
-    - qbittorrent.lan
-    - jellyseerr.lan      # Para Jellyseerr
-    - filebrowser.lan   # Para FileBrowser
+  # tls:
+  # - hosts:
+    # - jellyfin.lan
+    # - sonarr.lan
+    # - radarr.lan
+    # - lidarr.lan
+    # - prowlarr.lan
+    # - bazarr.lan
+    # - qbittorrent.lan
+    # - jellyseerr.lan      # Para Jellyseerr
+    # - filebrowser.lan   # Para FileBrowser
     # --- DOMINIOS PÚBLICOS ---
-    - jellyseerr.computerwizards.es
-    secretName: multimedia-tls-cert # Certificado único compartido
+    # - jellyseerr.computerwizards.es
+    # secretName: multimedia-tls-cert # Certificado único compartido
   rules:
               
   # --- SONARR ---
