@@ -18,6 +18,9 @@ metadata:
     app: prowlarr
 spec:
   replicas: 1
+  # CRÍTICO: Igual que en Sonarr/Radarr, usamos Recreate para proteger la DB SQLite.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prowlarr
@@ -26,15 +29,11 @@ spec:
       labels:
         app: prowlarr
     spec:
-      # SIN securityContext a nivel de Pod (s6-overlay requiere root al inicio)
-
       containers:
       - name: prowlarr
         image: lscr.io/linuxserver/prowlarr:latest
+        imagePullPolicy: IfNotPresent
         
-        # SIN securityContext a nivel de Contenedor
-
-        # Carga PUID=1000, PGID=1000, TZ desde tu configuración común
         envFrom:
         - configMapRef:
             name: common-env
@@ -43,32 +42,44 @@ spec:
         - containerPort: 9696
           name: http
 
-        # Control de salud
+        # --- MONITORIZACIÓN MEJORADA (HTTP) ---
         livenessProbe:
-          tcpSocket:
+          httpGet:
+            path: /ping
             port: 9696
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           periodSeconds: 20
+          failureThreshold: 3
+          timeoutSeconds: 5
+        
         readinessProbe:
-          tcpSocket:
+          httpGet:
+            path: /ping
             port: 9696
           initialDelaySeconds: 15
           periodSeconds: 10
 
-        # Límites de recursos (Prowlarr es muy ligero)
+        # StartupProbe para dar margen en actualizaciones
+        startupProbe:
+          httpGet:
+            path: /ping
+            port: 9696
+          failureThreshold: 30
+          periodSeconds: 10
+
+        # --- OPTIMIZACIÓN DE RECURSOS ---
+        # Prowlarr es muy eficiente. 300Mi es un techo seguro.
         resources:
           requests:
             cpu: 10m
-            memory: 128Mi
+            memory: 100Mi 
           limits:
             cpu: 500m
-            memory: 512Mi
+            memory: 300Mi # Bajado de 512Mi. Ahorras ~200MB de reserva.
 
         volumeMounts:
         - name: config
           mountPath: /config
-        # Montamos /data aunque Prowlarr no mueva archivos, para mantener consistencia
-        # y por si usas "Blackhole" como cliente de descarga.
         - name: media
           mountPath: /data
           
