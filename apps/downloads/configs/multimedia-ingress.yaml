@@ -105,6 +105,18 @@ spec:
             port:
               number: 80
 
+  # --- RDT CLIENT (Gestor TorBox) ---
+  - host: rdt.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rdt-client
+            port:
+              number: 80  # <--- Apuntamos al 80 (estándar)
+
   # --- JELLYSEERR ---
   - host: jellyseerr.lan
     http:
