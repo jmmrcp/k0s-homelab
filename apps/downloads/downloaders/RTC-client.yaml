@@ -3,8 +3,13 @@ kind: Deployment
 metadata:
   name: rdt-client
   namespace: downloads
+  labels:
+    app: rdt-client
 spec:
   replicas: 1
+  # IMPORTANTE: Recreate evita corrupción de base de datos SQLite
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: rdt-client
@@ -16,12 +21,13 @@ spec:
       containers:
       - name: rdt-client
         image: rogueosb/rdt-client:latest
+        imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "50m"       # Bajamos un poco el request para ser más ligeros
           limits:
-            memory: "1024Mi" # .NET puede ser tragón al arrancar, luego baja
+            memory: "1024Mi" # Límite generoso para el arranque de .NET
         env:
         - name: PUID
           value: "1000"
@@ -30,17 +36,34 @@ spec:
         - name: TZ
           value: "Europe/Madrid"
         volumeMounts:
+        # 1. Donde se guardan los archivos descargados
         - name: data
           mountPath: /data/downloads
-          subPath: torrents # Usamos la misma carpeta que usaba qBit
-        - name: config
+          subPath: torrents 
+          
+        # 2. DONDE SE GUARDA LA CONFIGURACIÓN (Vital para no perder datos)
+        - name: data
           mountPath: /data/db
+          subPath: configs/rdt-client # Guardamos la config en una subcarpeta ordenada
+
+      # Controles de salud para que Kubernetes sepa si está vivo
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 6500
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 6500
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: pvc-manual-media
-      - name: config
-        emptyDir: {} # O usa un PVC si quieres persistir la config del cliente
 ---
 apiVersion: v1
 kind: Service
