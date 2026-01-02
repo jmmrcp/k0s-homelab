@@ -4,4 +4,5 @@ namespace: dns # Fuerza a que todo lo de aquí vaya al namespace 'dns'
 resources:
   - namespace.yaml
   - coredns-config.yaml # Tu ConfigMap con los dominios .lan
-  - coredns-lan.yaml    # El Deployment y Service del DNS ligero
+  # - coredns-lan.yaml    # El Deployment y Service del DNS ligero
+  - coredns-deployment.yaml
