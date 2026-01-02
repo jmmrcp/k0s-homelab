@@ -6,22 +6,22 @@ metadata:
 data:
   Corefile: |
     .:53 {
-        log
         errors
-        # Mapeo de tus dominios locales a la IP del Ingress
+        health
+        ready
+        
+        # --- TUS DOMINIOS HOMELAB ---
+        # El DNS (.209) le dice a tu PC que las webs están en la .210
         hosts {
-            192.168.18.210 jellyfin.lan 
-            192.168.18.210 qbittorrent.lan 
-            192.168.18.210 jellyseerr.lan
-            192.168.18.210 radarr.lan
-            192.168.18.210 sonarr.lan
-            192.168.18.210 lidarr.lan
-            192.168.18.210 prowlarr.lan
-            192.168.18.210 bazarr.lan
-            192.168.18.210 readarr.lan
-            192.168.18.210 filebrowser.lan
-            fallthrough
+           192.168.18.210 jellyfin.lan qbittorrent.lan jellyseerr.lan radarr.lan sonarr.lan lidarr.lan prowlarr.lan bazarr.lan readarr.lan filebrowser.lan rdt.lan
+           fallthrough
         }
+        
+        # Reenvío a Internet (Cloudflare/Google)
         forward . 1.1.1.1 8.8.8.8
+        
         cache 30
+        loop
+        reload
+        loadbalance
     }
