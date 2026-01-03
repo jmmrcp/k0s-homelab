@@ -20,7 +20,7 @@ resources:
   # 4. Gestores de Descarga
   # - downloaders/qbittorrent.yaml
   # - downloaders/flaresolverr.yaml
-  - downloaders/RTC-client.yaml
+  - downloaders/rdt-client.yaml
   
   # 5. Stack Arr (Automatización)
   - arrs/radarr.yaml
