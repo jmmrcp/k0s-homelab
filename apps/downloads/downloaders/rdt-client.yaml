@@ -35,7 +35,7 @@ spec:
       
       containers:
       - name: rdt-client
-        image: ghcr.io/rogueosb/rdt-client:latest
+        image: rogueosb/rdt-client:2.0.119
         imagePullPolicy: IfNotPresent
         
         # Usamos tus variables comunes
