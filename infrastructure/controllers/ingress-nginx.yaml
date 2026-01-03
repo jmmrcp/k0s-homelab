@@ -428,9 +428,9 @@ spec:
         - --controller-class=k8s.io/ingress-nginx
         - --ingress-class=nginx
         - --configmap=$(POD_NAMESPACE)/ingress-nginx-controller
-        - --validating-webhook=:8443
-        - --validating-webhook-certificate=/usr/local/certificates/cert
-        - --validating-webhook-key=/usr/local/certificates/key
+        # - --validating-webhook=:8443
+        # - --validating-webhook-certificate=/usr/local/certificates/cert
+        # - --validating-webhook-key=/usr/local/certificates/key
         - --enable-metrics=false
         env:
         - name: POD_NAME
@@ -633,35 +633,35 @@ metadata:
 spec:
   controller: k8s.io/ingress-nginx
 ---
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  labels:
-    app.kubernetes.io/component: admission-webhook
-    app.kubernetes.io/instance: ingress-nginx
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/part-of: ingress-nginx
-    app.kubernetes.io/version: 1.10.0
-  name: ingress-nginx-admission
-webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: ingress-nginx-controller-admission
-      namespace: ingress-nginx
-      path: /networking/v1/ingresses
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validate.nginx.ingress.kubernetes.io
-  rules:
-  - apiGroups:
-    - networking.k8s.io
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - ingresses
-  sideEffects: None
+# apiVersion: admissionregistration.k8s.io/v1
+# kind: ValidatingWebhookConfiguration
+# metadata:
+  # labels:
+    # app.kubernetes.io/component: admission-webhook
+    # app.kubernetes.io/instance: ingress-nginx
+    # app.kubernetes.io/name: ingress-nginx
+    # app.kubernetes.io/part-of: ingress-nginx
+    # app.kubernetes.io/version: 1.10.0
+  # name: ingress-nginx-admission
+# webhooks:
+# - admissionReviewVersions:
+  # - v1
+  # clientConfig:
+    # service:
+      # name: ingress-nginx-controller-admission
+      # namespace: ingress-nginx
+      # path: /networking/v1/ingresses
+  # failurePolicy: Fail
+  # matchPolicy: Equivalent
+  # name: validate.nginx.ingress.kubernetes.io
+  # rules:
+  # - apiGroups:
+    # - networking.k8s.io
+    # apiVersions:
+    # - v1
+    # operations:
+    # - CREATE
+    # - UPDATE
+    # resources:
+    # - ingresses
+  # sideEffects: None
