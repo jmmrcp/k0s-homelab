@@ -1,0 +1,99 @@
+# 1. Disco para la configuración (Base de datos interna)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rdt-client-config
+  namespace: downloads
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 2. El Despliegue
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdt-client
+  namespace: downloads
+  labels:
+    app: rdt-client
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # Vital para evitar corrupción de la DB
+  selector:
+    matchLabels:
+      app: rdt-client
+  template:
+    metadata:
+      labels:
+        app: rdt-client
+    spec:
+      # Seguridad básica (ajustada a la imagen de rogueosb que suele usar root internamente para mapear PUID)
+      # No ponemos securityContext estricto para evitar conflictos de permisos
+      
+      containers:
+      - name: rdt-client
+        image: rogueosb/rdt-client:latest
+        imagePullPolicy: IfNotPresent
+        
+        # Usamos tus variables comunes
+        envFrom:
+        - configMapRef:
+            name: common-env # Carga PUID, PGID, TZ
+            
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "50m"
+          limits:
+            memory: "1024Mi" # .NET puede ser tragón al inicio
+            
+        volumeMounts:
+        # A. CONFIGURACIÓN: En su propio disco
+        - name: config
+          mountPath: /data/db
+          
+        # B. DESCARGAS: Montamos la raíz /data para ver 'torrents' y 'media'
+        # Esto permite que rdt-client mueva archivos si fuera necesario
+        - name: media
+          mountPath: /data
+          
+        # Probes
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 6500
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 6500
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: rdt-client-config
+      - name: media
+        persistentVolumeClaim:
+          # USAMOS EL NOMBRE REAL DE TU DISCO GRANDE
+          claimName: qbit-downloads 
+---
+# 3. El Servicio
+apiVersion: v1
+kind: Service
+metadata:
+  name: rdt-client-lb
+  namespace: downloads
+spec:
+  type: ClusterIP
+  selector:
+    app: rdt-client
+  ports:
+  - port: 80
+    targetPort: 6500
+    name: http

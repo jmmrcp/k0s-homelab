@@ -18,8 +18,9 @@ resources:
   - media-server/filebrowser.yaml
   
   # 4. Gestores de Descarga
-  - downloaders/qbittorrent.yaml
+  # - downloaders/qbittorrent.yaml
   # - downloaders/flaresolverr.yaml
+  - downloaders/RTC-client.yaml
   
   # 5. Stack Arr (Automatización)
   - arrs/radarr.yaml
@@ -30,8 +31,8 @@ resources:
   # - arrs/readarr.yaml (Si decides añadir libros también)
 
   # Lector de Telegram
-  - tools/rsshub.yaml 
-  - configs/sealed-secret-rsshub.yaml
+  # - tools/rsshub.yaml 
+  # - configs/sealed-secret-rsshub.yaml
 
 
 # patchesJson6902:
