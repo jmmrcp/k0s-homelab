@@ -126,3 +126,14 @@ spec:
     ports:
     - protocol: TCP
       port: 8096
+
+  # E. Permitir entrar a RSSHub
+  - from:
+    - podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: [qbittorrent, prowlarr, radarr, sonarr]
+    ports:
+    - protocol: TCP
+      port: 1200

@@ -113,7 +113,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: rdt-client
+            name: rdt-client-lb
             port:
               number: 80  # <--- Apuntamos al 80 (estándar)
 
@@ -152,6 +152,7 @@ spec:
             name: filebrowser-lb
             port:
               number: 80
+
   # --- JELLYFIN -----
   - host: jellyfin.lan
     http:
@@ -161,6 +162,18 @@ spec:
         backend:
           service:
             name: jellyfin-lb
+            port:
+              number: 80
+
+  # --- RSS ---
+  - host: rss.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rsshub-lb
             port:
               number: 80
 

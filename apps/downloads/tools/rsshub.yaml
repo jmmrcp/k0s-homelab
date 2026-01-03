@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rsshub
+  namespace: downloads
+  labels:
+    app: rsshub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rsshub
+  template:
+    metadata:
+      labels:
+        app: rsshub
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      containers:
+      - name: rsshub
+        # Usamos la versión ligera (sin navegador Puppeteer integrado)
+        # Si necesitas leer webs complejas, usa :chromium-bundled (consume más RAM)
+        image: diygod/rsshub:latest
+        
+        envFrom:
+        - configMapRef:
+            name: common-env
+            
+        env:
+        - name: CACHE_TYPE
+          value: "memory" # Caché en RAM para ir rápido
+        - name: TELEGRAM_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: rsshub-secrets
+              key: TELEGRAM_TOKEN
+        
+        ports:
+        - containerPort: 1200
+          name: http
+          
+        livenessProbe:
+          tcpSocket:
+            port: 1200
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: 1200
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi # RSSHub puede subir si procesa muchas imágenes
+            
+        volumeMounts:
+        # RSSHub no necesita disco persistente
+        - name: tmp
+          mountPath: /tmp
+          
+      volumes:
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rsshub-lb
+  namespace: downloads
+spec:
+  type: ClusterIP
+  selector:
+    app: rsshub
+  ports:
+    - port: 80
+      targetPort: 1200
+      protocol: TCP
