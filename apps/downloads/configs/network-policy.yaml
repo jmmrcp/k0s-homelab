@@ -52,6 +52,10 @@ spec:
       port: 9696
     - protocol: TCP
       port: 6767
+    - protocol: TCP
+      port: 1200  # RSSHub
+    - protocol: TCP
+      port: 6500  # RTC
   # Cloudflare Tunnel
   - from:
     - namespaceSelector:
@@ -137,3 +141,14 @@ spec:
     ports:
     - protocol: TCP
       port: 1200
+
+  # F. Permitir entrar a RTC
+  - from:
+    - podSelector:
+        matchExpressions:
+          - key: app
+            operator: In
+            values: [prowlarr, radarr, sonarr]
+    ports:
+    - protocol: TCP
+      port: 6500
