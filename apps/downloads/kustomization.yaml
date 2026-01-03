@@ -8,6 +8,7 @@ resources:
   
   # 2. Configuraciones Globales
   - configs/common-env.yaml      # PUID, PGID, TZ
+  - configs/shared-storage.yaml
   - configs/network-policy.yaml  # Firewall interno
   - configs/multimedia-ingress.yaml 
   
