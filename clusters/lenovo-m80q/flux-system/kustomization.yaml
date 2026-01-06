@@ -6,3 +6,4 @@ resources:
 
 patches:
   - path: disable-extras.yaml
+  - path: pin-flux.yaml 
