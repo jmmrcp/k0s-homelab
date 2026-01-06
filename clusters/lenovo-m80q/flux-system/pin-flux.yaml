@@ -1,0 +1,23 @@
+# Obligar a Source Controller a correr en casa
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-controller
+  namespace: flux-system
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: srv-lan-2
+---
+# Obligar a Kustomize Controller a correr en casa
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kustomize-controller
+  namespace: flux-system
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: srv-lan-2
