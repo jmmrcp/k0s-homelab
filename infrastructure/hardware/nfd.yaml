@@ -129,7 +129,7 @@ spec:
         app: nfd-worker
     spec:
       nodeSelector:
-        kubernetes.io/hostname: server-1
+        kubernetes.io/hostname: srv-lan-1
       containers:
       - args:
         - -server
