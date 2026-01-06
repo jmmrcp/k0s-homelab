@@ -26,5 +26,5 @@ resources:
       # metadata:
         # name: ingress-nginx-admission
       # $patch: delete
-patch:
-  - pin-nginx.yaml
+patches:
+  - path: pin-nginx.yaml
