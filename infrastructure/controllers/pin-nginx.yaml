@@ -8,4 +8,4 @@ spec:
   template:
     spec:
       nodeSelector:
-        kubernetes.io/hostname: srv-lan-1
+        kubernetes.io/hostname: srv-lan-2
