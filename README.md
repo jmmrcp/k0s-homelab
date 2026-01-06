@@ -1,12 +1,3 @@
-Tienes toda la razón. Han cambiado muchas cosas desde la primera versión: ahora tienes un **clúster híbrido (LAN + Nube)**, usas **RDT-Client** en lugar de qBittorrent, has configurado **LVM** para discos USB y hemos simplificado el Ingress a **HTTP**.
-
-Aquí tienes el **README.md 2.0 Definitivo**, actualizado con la arquitectura real que tienes funcionando ahora mismo.
-
-Copia y pega esto en tu archivo `README.md`.
-
-***
-
-```markdown
 # ☁️🏠 k0s HomeLab - Hybrid Cluster Edition
 
 ![Status](https://img.shields.io/badge/Status-Production-green)
