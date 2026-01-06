@@ -7,6 +7,7 @@ resources:
   # - controllers/cert-manager.yaml  # (Descarga el yaml oficial)
   - controllers/sealed-secrets.yaml # (Descarga el yaml oficial)
   # - controllers/self-signed-issuers.yaml
+  - network/namespace-cloudflare.yaml
   - network/metallb-config.yaml
   - network/cloudflare-tunnel.yaml
   - storage/pv-manual-media.yaml
