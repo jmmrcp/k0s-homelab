@@ -27,4 +27,4 @@ resources:
         # name: ingress-nginx-admission
       # $patch: delete
 patches:
-  - path: pin-nginx.yaml
+  - path: controllers/pin-nginx.yaml
