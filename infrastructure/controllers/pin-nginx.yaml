@@ -1,0 +1,11 @@
+# Obligar a Source Controller a correr en casa
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: srv-lan-1
