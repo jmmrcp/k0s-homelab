@@ -503,18 +503,18 @@ spec:
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
-        - mountPath: /usr/local/certificates/
-          name: webhook-cert
-          readOnly: true
+        # - mountPath: /usr/local/certificates/
+          # name: webhook-cert
+          # readOnly: true
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: ingress-nginx
       terminationGracePeriodSeconds: 300
       volumes:
-      - name: webhook-cert
-        secret:
-          secretName: ingress-nginx-admission
+      # - name: webhook-cert
+        # secret:
+          # secretName: ingress-nginx-admission
 ---
 apiVersion: batch/v1
 kind: Job
